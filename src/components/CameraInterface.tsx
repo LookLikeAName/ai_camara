@@ -6,11 +6,12 @@ interface CameraInterfaceProps {
   aspectRatio: string;
   filterId: string;
   imageSize: string;
+  enableGps: boolean;
   appMode: 'upload' | 'camera';
   onProcessingChange?: (processing: boolean) => void;
 }
 
-const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, filterId, imageSize, appMode, onProcessingChange }) => {
+const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, filterId, imageSize, enableGps, appMode, onProcessingChange }) => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('IDLE');
   const [subStatus, setSubStatus] = useState('');
@@ -18,8 +19,7 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
-  const [showGpsPrompt, setShowGpsPrompt] = useState(false);
-  const gpsDecisionMade = useRef(false);
+  const [showDownloadStarted, setShowDownloadStarted] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,7 +31,6 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
   const [vfSize, setVfSize] = useState({ width: 0, height: 0 });
 
   const resetState = () => {
-    // Abort ongoing requests
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -47,13 +46,11 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
     onProcessingChange?.(false);
   };
 
-  // Notify parent of processing state
   useEffect(() => {
     const processing = loading || (!!originalPreview && !resultImage);
     onProcessingChange?.(processing);
   }, [loading, originalPreview, resultImage, onProcessingChange]);
 
-  // Handle Camera Stream
   useEffect(() => {
     const startCamera = async () => {
       if (appMode === 'camera' && !loading && !resultImage && !originalPreview) {
@@ -89,12 +86,10 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
     }
   };
 
-  // Reset state when key settings change
   useEffect(() => {
     resetState();
   }, [aspectRatio, appMode, filterId, imageSize]);
 
-  // Calculate optimal viewfinder size
   useEffect(() => {
     const calculateSize = () => {
       if (!containerRef.current) return;
@@ -137,46 +132,45 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
     }
   };
 
-  const handleCapture = async () => {
-    if (loading) return;
-
-    if (resultImage) {
-      resetState();
-      return;
-    }
-
-    if (originalPreview) return;
-
-    if (appMode === 'camera') {
-      if (!gpsDecisionMade.current && !coords && "geolocation" in navigator) {
-        setShowGpsPrompt(true);
-        return;
-      }
-      await performCapture();
-    } else {
-      fileInputRef.current?.click();
-    }
-  };
-
-  const handleGpsDecision = (enable: boolean) => {
-    gpsDecisionMade.current = true;
-    setShowGpsPrompt(false);
-    if (enable) {
+  const captureGpsAndProceed = () => {
+    if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition((pos) => {
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         performCapture();
       }, (err) => {
         console.warn("Location error:", err);
+        setCoords(null);
         performCapture();
       });
     } else {
+      setCoords(null);
       performCapture();
+    }
+  };
+
+  const handleCapture = async () => {
+    if (loading) return;
+    if (resultImage) {
+      resetState();
+      return;
+    }
+    if (originalPreview) return;
+
+    if (appMode === 'camera') {
+      if (enableGps) {
+        captureGpsAndProceed();
+      } else {
+        setCoords(null);
+        await performCapture();
+      }
+    } else {
+      setCoords(null);
+      fileInputRef.current?.click();
     }
   };
 
   const processImage = async (fileOrBlob: Blob) => {
     if (!apiKey) return;
-    
     abortControllerRef.current = new AbortController();
     
     try {
@@ -210,6 +204,14 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       console.error(err);
+      
+      // Reset only functional states, keep error visible
+      setResultImage(null);
+      setOriginalPreview(null);
+      setCoords(null);
+      setLoading(false);
+      onProcessingChange?.(false);
+      
       setErrorMessage(err.message || 'SYSTEM FAILURE');
       setStatus('IDLE');
     } finally {
@@ -236,6 +238,10 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
     link.href = finalImage;
     link.download = `reconstructed_${Date.now()}.jpg`;
     link.click();
+
+    // Show download started feedback
+    setShowDownloadStarted(true);
+    setTimeout(() => setShowDownloadStarted(false), 3000);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,7 +249,6 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
     if (file) {
       await processImage(file);
     }
-    // Reset input value so the same file can be selected again
     e.target.value = '';
   };
 
@@ -282,16 +287,11 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
           </div>
         )}
 
-        {showGpsPrompt && (
-          <div className="error-popup" style={{ borderColor: 'var(--camera-accent)' }}>
-            <div className="error-icon" style={{ borderColor: 'var(--camera-accent)', color: 'var(--camera-accent)' }}>?</div>
-            <div className="error-title" style={{ color: 'var(--camera-accent)' }}>GPS TAGGING</div>
-            <div className="error-msg">
-              Enable GPS to add location data to your photo's EXIF metadata. 
-              Info is only used for the file header. Camera works without it.
-            </div>
-            <button className="error-btn" style={{ background: 'var(--camera-accent)', color: 'black' }} onClick={() => handleGpsDecision(true)}>ENABLE GPS</button>
-            <button className="error-btn secondary" onClick={() => handleGpsDecision(false)}>NO THANKS</button>
+        {showDownloadStarted && (
+          <div className="error-popup" style={{ borderColor: 'var(--camera-accent)', padding: '1rem', zIndex: 150 }}>
+            <div className="error-icon" style={{ borderColor: 'var(--camera-accent)', color: 'var(--camera-accent)', width: '20px', height: '20px', fontSize: '0.8rem' }}>↓</div>
+            <div className="error-title" style={{ color: 'var(--camera-accent)', fontSize: '0.7rem' }}>DOWNLOAD STARTED</div>
+            <div className="error-msg" style={{ fontSize: '0.5rem' }}>Your image is being saved to your device.</div>
           </div>
         )}
 
