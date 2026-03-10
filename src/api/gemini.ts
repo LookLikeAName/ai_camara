@@ -133,7 +133,11 @@ export const processImageForApi = async (fileOrBlob: Blob): Promise<string> => {
  */
 export const validateApiKey = async (apiKey: string): Promise<{ valid: boolean; error?: string }> => {
   try {
-    const response = await fetch(`${BASE_URL}/models?key=${apiKey}`);
+    const response = await fetch(`${BASE_URL}/models`, {
+      headers: {
+        'x-goog-api-key': apiKey
+      }
+    });
     
     if (!response.ok) {
       const error = await response.json();
@@ -191,10 +195,11 @@ const handleCandidateError = (candidate: any) => {
 export const describeImage = async (apiKey: string, imageBase64: string): Promise<string> => {
   const { visionModel } = getModelConfig();
 
-  const response = await fetch(`${BASE_URL}/models/${visionModel}:generateContent?key=${apiKey}`, {
+  const response = await fetch(`${BASE_URL}/models/${visionModel}:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
     },
     body: JSON.stringify({
       contents: [{
@@ -229,10 +234,11 @@ export const describeImage = async (apiKey: string, imageBase64: string): Promis
 export const generateImage = async (apiKey: string, prompt: string): Promise<string> => {
   const { imageModel, aspectRatio, imageSize } = getModelConfig();
   
-  const response = await fetch(`${BASE_URL}/models/${imageModel}:generateContent?key=${apiKey}`, {
+  const response = await fetch(`${BASE_URL}/models/${imageModel}:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
     },
     body: JSON.stringify({
       contents: [{
