@@ -7,7 +7,7 @@ export interface ApiKeyEntry {
   isActive: boolean;
 }
 
-const STORAGE_KEY = 'ai_camara_api_keys';
+const STORAGE_KEY = 'ai_camera_api_keys';
 
 export const useApiKey = () => {
   const [keys, setKeys] = useState<ApiKeyEntry[]>(() => {

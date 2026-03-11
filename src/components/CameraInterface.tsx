@@ -27,10 +27,15 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
   const containerRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const latestRequestId = useRef<number>(0);
   
   const [vfSize, setVfSize] = useState({ width: 0, height: 0 });
 
   const resetState = () => {
+    // 1. Invalidate current request ID
+    latestRequestId.current = Date.now();
+    
+    // 2. Kill network connections
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -51,6 +56,7 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
     onProcessingChange?.(processing);
   }, [loading, originalPreview, resultImage, onProcessingChange]);
 
+  // Handle Camera Stream
   useEffect(() => {
     const startCamera = async () => {
       if (appMode === 'camera' && !loading && !resultImage && !originalPreview) {
@@ -88,7 +94,7 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
 
   useEffect(() => {
     resetState();
-  }, [aspectRatio, appMode, filterId, imageSize]);
+  }, [aspectRatio, appMode, filterId, imageSize, enableGps]);
 
   useEffect(() => {
     const calculateSize = () => {
@@ -171,7 +177,14 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
 
   const processImage = async (fileOrBlob: Blob) => {
     if (!apiKey) return;
+    
+    // SETUP: Generate unique ID and start AbortController
+    const myRequestId = Date.now();
+    latestRequestId.current = myRequestId;
+    
+    if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
     
     try {
       setLoading(true);
@@ -186,36 +199,47 @@ const CameraInterface: React.FC<CameraInterfaceProps> = ({ apiKey, aspectRatio, 
       setSubStatus('OPTIMIZING IMAGE & TRANSLATING');
       
       const base64 = await processImageForApi(fileOrBlob);
-      const description = await describeImage(apiKey, base64);
       
-      if (abortControllerRef.current?.signal.aborted) return;
+      // POINT 1: Within I2T request
+      const description = await describeImage(apiKey, base64, signal);
+      
+      // POINT 2: Between I2T and T2I
+      if (myRequestId !== latestRequestId.current || signal.aborted) return;
 
       console.log('[DEBUG] AI Vision Description:', description);
 
       setStatus('RECONSTRUCTING...');
       setSubStatus('DREAMING IN PROGRESS (10-30S)');
-      const generatedImageUrl = await generateImage(apiKey, description);
       
-      if (abortControllerRef.current?.signal.aborted) return;
+      // POINT 3: Within T2I request
+      const generatedImageUrl = await generateImage(apiKey, description, signal);
+      
+      // FINAL GATE: Before updating React state
+      if (myRequestId !== latestRequestId.current || signal.aborted) return;
 
       setResultImage(generatedImageUrl);
       setStatus('READY');
       setSubStatus('');
     } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      console.error(err);
+      if (err.name === 'AbortError') {
+        console.log(`[AiCamera] Request ${myRequestId} aborted.`);
+        return;
+      }
       
-      // Reset only functional states, keep error visible
-      setResultImage(null);
-      setOriginalPreview(null);
-      setCoords(null);
-      setLoading(false);
-      onProcessingChange?.(false);
-      
-      setErrorMessage(err.message || 'SYSTEM FAILURE');
-      setStatus('IDLE');
+      // Only show error if this is still the active request
+      if (myRequestId === latestRequestId.current) {
+        console.error(err);
+        setResultImage(null);
+        setOriginalPreview(null);
+        setCoords(null);
+        setLoading(false);
+        onProcessingChange?.(false);
+        setErrorMessage(err.message || 'SYSTEM FAILURE');
+        setStatus('IDLE');
+      }
     } finally {
-      if (!abortControllerRef.current?.signal.aborted) {
+      // Clean up controller if this was the last request
+      if (myRequestId === latestRequestId.current && !signal.aborted) {
         setLoading(false);
         abortControllerRef.current = null;
       }

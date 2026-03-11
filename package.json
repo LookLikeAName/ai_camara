@@ -1,5 +1,5 @@
 {
-  "name": "ai_camara",
+  "name": "ai_camera",
   "private": true,
   "version": "0.1.0",
   "description": "Multimodal Image Reconstruction via Gemini API",

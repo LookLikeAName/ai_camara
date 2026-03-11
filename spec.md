@@ -1,7 +1,7 @@
-# AI Camara: Image Reconstruction via Gemini
+# AI Camera: Image Reconstruction via Gemini
 
 ## Project Overview
-AI Camara is a static web application that performs "image-to-text-to-image" reconstruction. The user uploads an image, a vision model describes it in exhaustive detail, and that description is used as a prompt for an image generation model to recreate the scene.
+AI Camera is a static web application that performs "image-to-text-to-image" reconstruction. The user uploads an image, a vision model describes it in exhaustive detail, and that description is used as a prompt for an image generation model to recreate the scene.
 
 ## Core Features
 1.  **Direct API Integration**: Communicates with the Google Gemini API directly from the browser using RESTful requests.

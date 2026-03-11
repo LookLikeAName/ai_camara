@@ -1,8 +1,8 @@
-# AI_CAMARA // V.0.1
+# AI_CAMERA // V.0.1
 
-AI_CAMARA is a technical "image-to-text-to-image" reconstruction experiment. It uses Gemini's advanced multimodal capabilities to analyze a real-world image, describe it in exhaustive detail, and then "dream" a new version based strictly on that description.
+AI_CAMERA is a technical "image-to-text-to-image" reconstruction experiment. It uses Gemini's advanced multimodal capabilities to analyze a real-world image, describe it in exhaustive detail, and then "dream" a new version based strictly on that description.
 
-![AI_CAMARA UI](https://github.com/LookLikeAName/ai_camara/raw/main/public/vite.svg) *Placeholder - App uses a dark camera-inspired interface*
+![AI_CAMERA UI](https://github.com/LookLikeAName/ai_camera/raw/main/public/vite.svg) *Placeholder - App uses a dark camera-inspired interface*
 
 ## 📸 Core Features
 
@@ -35,8 +35,8 @@ AI_CAMARA is a technical "image-to-text-to-image" reconstruction experiment. It 
 ### Installation
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/LookLikeAName/ai_camara.git
-    cd ai_camara
+    git clone https://github.com/LookLikeAName/ai_camera.git
+    cd ai_camera
     ```
 2.  Install dependencies:
     ```bash
@@ -59,9 +59,9 @@ AI_CAMARA is a technical "image-to-text-to-image" reconstruction experiment. It 
 ## ⚙️ Advanced Configuration
 You can change the underlying AI models directly from the browser console:
 ```javascript
-window.AiCamaraConfig.setVisionModel('your-model-id');
-window.AiCamaraConfig.setImageModel('your-model-id');
-window.AiCamaraConfig.config; // View current settings
+window.AiCameraConfig.setVisionModel('your-model-id');
+window.AiCameraConfig.setImageModel('your-model-id');
+window.AiCameraConfig.config; // View current settings
 ```
 
 ## 📄 License

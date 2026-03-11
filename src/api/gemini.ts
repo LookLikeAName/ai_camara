@@ -1,7 +1,7 @@
 import * as piexif from 'piexifjs';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
-const STORAGE_KEY = 'ai_camara_models';
+const STORAGE_KEY = 'ai_camera_models';
 
 export interface FilterOption {
   id: string;
@@ -108,53 +108,53 @@ const saveModelConfig = (config: ModelConfig) => {
 
 // Expose config to window for console access
 if (typeof window !== 'undefined') {
-  (window as any).AiCamaraConfig = {
+  (window as any).AiCameraConfig = {
     get config() {
       return getModelConfig();
     },
     setVisionModel(model: string) {
       const current = getModelConfig();
       saveModelConfig({ ...current, visionModel: model });
-      console.log(`[AiCamara] Vision model updated to: ${model}`);
+      console.log(`[AiCamera] Vision model updated to: ${model}`);
     },
     setImageModel(model: string) {
       const current = getModelConfig();
       saveModelConfig({ ...current, imageModel: model });
-      console.log(`[AiCamara] Image model updated to: ${model}`);
+      console.log(`[AiCamera] Image model updated to: ${model}`);
     },
     setAspectRatio(ratio: string) {
       const validRatios = ["1:1", "16:9", "9:16", "3:4", "4:3"];
       if (!validRatios.includes(ratio)) {
-        console.error(`[AiCamara] Invalid ratio. Use: ${validRatios.join(', ')}`);
+        console.error(`[AiCamera] Invalid ratio. Use: ${validRatios.join(', ')}`);
         return;
       }
       const current = getModelConfig();
       saveModelConfig({ ...current, aspectRatio: ratio });
-      console.log(`[AiCamara] Aspect ratio updated to: ${ratio}`);
+      console.log(`[AiCamera] Aspect ratio updated to: ${ratio}`);
     },
     setImageSize(size: string) {
       const validSizes = ["1K", "2K", "4K"];
       if (!validSizes.includes(size.toUpperCase())) {
-        console.error(`[AiCamara] Invalid size. Use: ${validSizes.join(', ')}`);
+        console.error(`[AiCamera] Invalid size. Use: ${validSizes.join(', ')}`);
         return;
       }
       const current = getModelConfig();
       saveModelConfig({ ...current, imageSize: size.toUpperCase() });
-      console.log(`[AiCamara] Image size updated to: ${size.toUpperCase()}`);
+      console.log(`[AiCamera] Image size updated to: ${size.toUpperCase()}`);
     },
     setFilter(filterId: string, customDesc: string = '') {
       const current = getModelConfig();
       saveModelConfig({ ...current, filterId, customFilterDescription: customDesc });
-      console.log(`[AiCamara] Filter updated to: ${filterId}`);
+      console.log(`[AiCamera] Filter updated to: ${filterId}`);
     },
     setEnableGps(enabled: boolean) {
       const current = getModelConfig();
       saveModelConfig({ ...current, enableGps: enabled });
-      console.log(`[AiCamara] GPS enabled: ${enabled}`);
+      console.log(`[AiCamera] GPS enabled: ${enabled}`);
     },
     setVisionPrompt(prompt: string) {
       sessionVisionPrompt = prompt;
-      console.log(`[AiCamara] Vision system prompt updated for this session.`);
+      console.log(`[AiCamera] Vision system prompt updated for this session.`);
     },
     get visionPrompt() {
       return sessionVisionPrompt;
@@ -162,7 +162,7 @@ if (typeof window !== 'undefined') {
     reset() {
       saveModelConfig(DEFAULT_CONFIG);
       sessionVisionPrompt = DEFAULT_VISION_PROMPT;
-      console.log('[AiCamara] Config reset to defaults.');
+      console.log('[AiCamera] Config reset to defaults.');
     },
     updateConfig(partial: Partial<ModelConfig>) {
       const current = getModelConfig();
@@ -170,7 +170,7 @@ if (typeof window !== 'undefined') {
       return getModelConfig();
     },
     help: `
-Use window.AiCamaraConfig to modify settings:
+Use window.AiCameraConfig to modify settings:
 - .setVisionModel('model-id')
 - .setImageModel('model-id')
 - .setAspectRatio('1:1' | '16:9' | '9:16' | '4:3' | '3:4')
@@ -330,7 +330,7 @@ const handleCandidateError = (candidate: any) => {
 /**
  * Calls the vision model to describe an image.
  */
-export const describeImage = async (apiKey: string, imageBase64: string): Promise<string> => {
+export const describeImage = async (apiKey: string, imageBase64: string, signal?: AbortSignal): Promise<string> => {
   const { visionModel, filterId, customFilterDescription } = getModelConfig();
   
   // Decide which base instruction to use
@@ -356,7 +356,8 @@ export const describeImage = async (apiKey: string, imageBase64: string): Promis
           { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }
         ]
       }]
-    })
+    }),
+    signal
   });
 
   if (!response.ok) {
@@ -375,7 +376,7 @@ export const describeImage = async (apiKey: string, imageBase64: string): Promis
 /**
  * Calls the image model to generate an image from a prompt.
  */
-export const generateImage = async (apiKey: string, prompt: string): Promise<string> => {
+export const generateImage = async (apiKey: string, prompt: string, signal?: AbortSignal): Promise<string> => {
   const { imageModel, aspectRatio, imageSize } = getModelConfig();
   
   // Use the vision model's prompt directly, just clean up the prefix
@@ -391,7 +392,8 @@ export const generateImage = async (apiKey: string, prompt: string): Promise<str
       generationConfig: {
         image_config: { aspect_ratio: aspectRatio, image_size: imageSize }
       }
-    })
+    }),
+    signal
   });
 
   if (!response.ok) {

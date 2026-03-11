@@ -21,7 +21,7 @@ function App() {
   });
 
   // Model Config State
-  const [modelConfig, setModelConfig] = useState(() => (window as any).AiCamaraConfig?.config || { 
+  const [modelConfig, setModelConfig] = useState(() => (window as any).AiCameraConfig?.config || { 
     aspectRatio: '16:9', 
     imageSize: '1K',
     filterId: 'none',
@@ -67,7 +67,7 @@ function App() {
     if (partial.appMode) {
       setAppMode(partial.appMode);
     } else {
-      const newConfig = (window as any).AiCamaraConfig?.updateConfig(partial);
+      const newConfig = (window as any).AiCameraConfig?.updateConfig(partial);
       if (newConfig) setModelConfig(newConfig);
     }
     setPendingConfig(null);
@@ -78,8 +78,8 @@ function App() {
       applyConfigUpdate(pendingConfig);
     } else {
       setPendingConfig(null);
-      setIsConfigOpen(false);
     }
+    setIsConfigOpen(false); // Always close settings after a decision
   };
 
   // Calculate UI Scale factor based on window size
@@ -95,7 +95,7 @@ function App() {
   return (
     <div className="app-container" style={dynamicStyles}>
       <header className="header">
-        <h1 style={{ fontSize: `calc(1rem * var(--ui-scale))` }}>AI_CAMARA // V.0.1</h1>
+        <h1 style={{ fontSize: `calc(1rem * var(--ui-scale))` }}>AI_CAMERA // V.0.1</h1>
         <div className="header-controls">
           <button 
             className={`config-trigger-header ${appMode === 'camera' ? 'active' : ''}`} 
@@ -136,14 +136,7 @@ function App() {
               Changing settings will stop the current AI process. 
               Do you want to proceed and lose current progress?
             </div>
-            <button className="error-btn" style={{ background: 'var(--camera-accent)', color: 'black' }} onClick={() => {
-              if (pendingConfig.appMode) {
-                setAppMode(pendingConfig.appMode);
-                setPendingConfig(null);
-              } else {
-                handleAbortDecision(true);
-              }
-            }}>PROCEED & ABORT</button>
+            <button className="error-btn" style={{ background: 'var(--camera-accent)', color: 'black' }} onClick={() => handleAbortDecision(true)}>PROCEED & ABORT</button>
             <button className="error-btn secondary" onClick={() => handleAbortDecision(false)}>CANCEL</button>
           </div>
         )}
@@ -249,7 +242,7 @@ function App() {
       </main>
 
       <footer style={{ marginTop: 'auto', padding: '0.5rem 0', fontSize: `calc(0.5rem * var(--ui-scale))`, color: '#555', textAlign: 'center', flexShrink: 0 }}>
-        AI_CAMARA SYSTEM_0x3F42 // GEMINI_3.1_VISION_GENERATOR_CORE
+        AI_CAMERA SYSTEM_0x3F42 // GEMINI_3.1_VISION_GENERATOR_CORE
       </footer>
     </div>
   );
