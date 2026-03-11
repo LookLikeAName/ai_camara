@@ -61,7 +61,8 @@ const VISION_DETAIL_GUIDE = `
 3. Subject Mapping: List all subjects and their precise spatial relationships and positions within the frame.
 4. Micro-Detail: For each subject, describe its exact scale, specific color shades, textures, and orientation.
 5. Technical Lighting: Identify light sources, shadow directions, and highlights to define 3D volume.
-6. Artistic Style: Identify the medium and rendering techniques.
+6. Regional Info: Note any text, signs, or culturally specific elements with exact wording and placement. Race if human subjects are present.
+7. Artistic Style: Identify the medium and rendering techniques. 
 IMPORTANT: Prefix the final section with "STYLE: ".
 Provide only the description.`;
 
@@ -375,7 +376,7 @@ export const describeImage = async (apiKey: string, imageBase64: string): Promis
  * Calls the image model to generate an image from a prompt.
  */
 export const generateImage = async (apiKey: string, prompt: string): Promise<string> => {
-  const { imageModel, aspectRatio, imageSize, filterId, customFilterDescription } = getModelConfig();
+  const { imageModel, aspectRatio, imageSize } = getModelConfig();
   
   // Use the vision model's prompt directly, just clean up the prefix
   const finalPrompt = prompt.replace('STYLE:', '').trim();
