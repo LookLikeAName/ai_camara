@@ -2,7 +2,7 @@
 
 AI_CAMERA is a technical "image-to-text-to-image" reconstruction experiment. It uses Gemini's advanced multimodal capabilities to analyze a real-world image, describe it in exhaustive detail, and then "dream" a new version based strictly on that description.
 
-![AI_CAMERA UI](https://github.com/LookLikeAName/ai_camera/raw/main/public/vite.svg) *Placeholder - App uses a dark camera-inspired interface*
+![AI_CAMERA UI](https://github.com/LookLikeAName/ai_camara/raw/main/public/ai_camera.svg) *Placeholder - App uses a dark camera-inspired interface*
 
 ## 📸 Core Features
 
